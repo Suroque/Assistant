@@ -76,6 +76,14 @@ export default function HomeScreen() {
           Если в логах вы видите session: null — значит Supabase подключен правильно.
         </ThemedText>
       </ThemedView>
+
+      <ThemedView style={styles.stepContainer}>
+        <Link href="/auth">
+          <Link.Trigger>
+            <ThemedText type="subtitle">Open Auth Test</ThemedText>
+          </Link.Trigger>
+        </Link>
+      </ThemedView>
     </ParallaxScrollView>
   );
 }
