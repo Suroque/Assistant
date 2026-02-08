@@ -1,26 +1,29 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, TextInput, useColorScheme } from 'react-native';
-import { Link } from 'expo-router';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  useColorScheme,
+  View,
+  Pressable,
+} from 'react-native';
 
 import { signIn, signOut, signUp } from '@/src/lib/auth';
 import { useSession } from '@/src/hooks/useSession';
 
 function normalizeEmail(raw: string) {
-  // Supabase часто ругается на пробелы/невидимые символы
   return raw.trim().toLowerCase();
 }
 
 function isValidEmail(email: string) {
-  // Простая практичная проверка (достаточно для UI)
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export default function AuthScreen() {
   const { session, loading } = useSession();
-
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
 
@@ -55,7 +58,7 @@ export default function AuthScreen() {
       return null;
     }
     if (p.length < 6) {
-      Alert.alert('Weak password', 'Password must be at least 6 characters (Supabase default).');
+      Alert.alert('Weak password', 'Password must be at least 6 characters.');
       return null;
     }
     return { e, p };
@@ -66,15 +69,9 @@ export default function AuthScreen() {
     if (!v) return;
 
     const { error } = await signUp(v.e, v.p);
-    if (error) {
-      Alert.alert('Sign up error', error.message);
-      return;
-    }
+    if (error) return Alert.alert('Sign up error', error.message);
 
-    Alert.alert(
-      'Sign up',
-      'Sign-up request sent. If email confirmation is enabled in Supabase, check your inbox.'
-    );
+    Alert.alert('Sign up', 'If email confirmation is enabled, check your inbox.');
   };
 
   const onSignIn = async () => {
@@ -82,10 +79,7 @@ export default function AuthScreen() {
     if (!v) return;
 
     const { error } = await signIn(v.e, v.p);
-    if (error) {
-      Alert.alert('Sign in error', error.message);
-      return;
-    }
+    if (error) return Alert.alert('Sign in error', error.message);
   };
 
   const onSignOut = async () => {
@@ -93,89 +87,98 @@ export default function AuthScreen() {
     if (error) Alert.alert('Sign out error', error.message);
   };
 
+  const bg = isDark ? '#000000' : '#ffffff';
+  const fg = isDark ? '#ffffff' : '#000000';
+
   return (
-    <ThemedView style={{ flex: 1, padding: 16, gap: 14 }}>
-      <ThemedText type="title">Auth</ThemedText>
-
-      <ThemedText>
-        Status:{' '}
-        {loading
-          ? 'Loading...'
-          : session
-          ? `Logged in: ${session.user.email ?? '(no email)'}`
-          : 'Logged out'}
-      </ThemedText>
-
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email"
-        placeholderTextColor={placeholderTextColor}
-        autoCapitalize="none"
-        autoCorrect={false}
-        spellCheck={false}
-        keyboardType="email-address"
-        textContentType="emailAddress"
-        autoComplete="email"
-        style={inputStyle}
-      />
-
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        placeholderTextColor={placeholderTextColor}
-        secureTextEntry
-        autoCapitalize="none"
-        autoCorrect={false}
-        spellCheck={false}
-        textContentType="password"
-        autoComplete="password"
-        style={inputStyle}
-      />
-
-      <Pressable
-        onPress={onSignUp}
-        style={{
-          borderRadius: 10,
-          paddingVertical: 12,
-          paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
-        }}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ padding: 16, gap: 12 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <ThemedText type="defaultSemiBold">Sign up</ThemedText>
-      </Pressable>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: fg }}>Auth</Text>
 
-      <Pressable
-        onPress={onSignIn}
-        style={{
-          borderRadius: 10,
-          paddingVertical: 12,
-          paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
-        }}
-      >
-        <ThemedText type="defaultSemiBold">Sign in</ThemedText>
-      </Pressable>
+        <Text style={{ color: fg }}>
+          Status:{' '}
+          {loading
+            ? 'Loading...'
+            : session
+            ? `Logged in: ${session.user.email ?? '(no email)'}`
+            : 'Logged out'}
+        </Text>
 
-      <Pressable
-        onPress={onSignOut}
-        style={{
-          borderRadius: 10,
-          paddingVertical: 12,
-          paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
-        }}
-      >
-        <ThemedText type="defaultSemiBold">Sign out</ThemedText>
-      </Pressable>
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          placeholderTextColor={placeholderTextColor}
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+          keyboardType="email-address"
+          textContentType="emailAddress"
+          autoComplete="email"
+          style={inputStyle}
+        />
 
-      <ThemedText style={{ marginTop: 8 }}>
-        Back to home: <Link href="/">(open)</Link>
-      </ThemedText>
-    </ThemedView>
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor={placeholderTextColor}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+          textContentType="password"
+          autoComplete="password"
+          style={inputStyle}
+        />
+
+        <Pressable
+          onPress={onSignUp}
+          style={{
+            borderRadius: 10,
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
+          }}
+        >
+          <Text style={{ color: fg, fontWeight: '600' }}>Sign up</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onSignIn}
+          style={{
+            borderRadius: 10,
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
+          }}
+        >
+          <Text style={{ color: fg, fontWeight: '600' }}>Sign in</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onSignOut}
+          style={{
+            borderRadius: 10,
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
+          }}
+        >
+          <Text style={{ color: fg, fontWeight: '600' }}>Sign out</Text>
+        </Pressable>
+
+        <Text style={{ color: fg, opacity: 0.7 }}>Route: /auth</Text>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
